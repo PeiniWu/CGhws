@@ -64,9 +64,7 @@ $("#re").click(function Time0 () {
 $("#ten").click(function Time1 () {
   time+=10;
   console.log(time);
-  //debugger;
   angle += -((Math.PI/30)*time);
-  //needleGroup.rotation.z = -((Math.PI/30)*time);
 });
 
 
@@ -132,7 +130,7 @@ function animate() {
 
 var dt = c.getDelta();
   if (turn){
-  angle += 2*Math.PI*dt/60;
+ angle += 2*Math.PI*dt/60;
 	
   }
 	 needleGroup.rotation.z = angle;
