@@ -89,6 +89,14 @@ function onMouseUp(){
         $('.status').text('');
 	}
 }
+// OnClick
+// not using onclick at all - onmousedown and onmouseup take care of everything
+
+// Optional add-on: if mouse moves out, then release hold
+$('.target').mouseout( function(){
+    onMouseUp();
+});
+
 ////
 
 $("#ten").click(function Time1 () {
@@ -97,12 +105,6 @@ $("#ten").click(function Time1 () {
   angle += -((Math.PI/30)*time);
 });
 
-$("#one").click(function Time2 () {
-  time+=1;
-  console.log(time);
-  
-  
-});
 
 
 function init() {
