@@ -6,8 +6,8 @@
 <div id="info">
   <br>
   <button id="toggle" style="width:20%">Toggle Turn</button>
-  <button id="re" style="width:10%">reset</button>
   <button id="ten" style="width:10%">+10</button>
+  <p>Status: <span class="status" /><p>
 <script src="https://threejs.org/build/three.min.js"></script>
 <script src="https://threejs.org/examples/js/controls/OrbitControls.js">
 </script>
@@ -39,27 +39,57 @@ var time=0;
 var angle2=0;
 var c;
 var turn = false;
-  var reset = false;
-
+// This timeout, started on mousedown, triggers the beginning of a hold
+var holdStarter = null;
+// This is how many milliseconds to wait before recognizing a hold
+var holdDelay = 500;
+// This flag indicates the user is currently holding the mouse down
+var holdActive = false;
 init();
 animate();
 //first();
 
-$("#toggle").click(function change () {
+
+
+////
+$('#toggle').mousedown(onMouseDown);
+function onMouseDown(){
   turn = !turn;
   if(turn)
   	$("#toggle").text ('stop');
   else
   	$("#toggle").text ('turn');
-  
-});
-
-$("#re").click(function Time0 () {
 	
-  time=0;
-  console.log(time);
-	angle = 0;
-});
+    // Do not take any immediate action - just set the holdStarter
+    //  to wait for the predetermined delay, and then begin a hold
+    holdStarter = setTimeout(function() {
+		holdStarter = null;
+		holdActive = true;
+		// begin hold-only operation here, if desired
+        $('.status').text('holding...');
+		angle =0;
+		time=0;
+		console.log(time);
+	}, holdDelay);
+}
+
+$('#toggle').mouseup(onMouseUp);
+function onMouseUp(){
+    // If the mouse is released immediately (i.e., a click), before the
+    //  holdStarter runs, then cancel the holdStarter and do the click
+	if (holdStarter) {
+		clearTimeout(holdStarter);
+		// run click-only operation here
+        $('.status').text('Clicked!');
+	}
+    // Otherwise, if the mouse was being held, end the hold
+	else if (holdActive) {
+		holdActive = false;
+		// end hold-only operation here, if desired
+        $('.status').text('');
+	}
+}
+////
 
 $("#ten").click(function Time1 () {
   time+=10;
@@ -67,6 +97,12 @@ $("#ten").click(function Time1 () {
   angle += -((Math.PI/30)*time);
 });
 
+$("#one").click(function Time2 () {
+  time+=1;
+  console.log(time);
+  
+  
+});
 
 
 function init() {
@@ -130,10 +166,10 @@ function animate() {
 
 var dt = c.getDelta();
   if (turn){
- angle += 2*Math.PI*dt/60;
-	
+	angle += 2*Math.PI*dt/60;
   }
-	 needleGroup.rotation.z = angle;
+	
+	needleGroup.rotation.z = angle;
 	
   requestAnimationFrame(animate);
   renderer.render(scene, camera);
