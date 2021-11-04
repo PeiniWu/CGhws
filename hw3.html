@@ -6,8 +6,8 @@
 
 <div id="info">*用"↑ ↓ ← →"控制車子方向*</div>
 <script src="https://threejs.org/build/three.min.js"></script>
-<script src="https://threejs.org/examples/js/controls/OrbitControls.js">
 </script>
+<script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
 <script src="https://jyunming-chen.github.io/tutsplus/js/KeyboardState.js"></script>
 
 <style>
@@ -28,7 +28,7 @@ body {
 <body>
 <script>
 var camera, camera3rd, scene, renderer;
-var keyboard = new KeyboardState();
+var keyboard = new KeyboardState(),control;
 var clock;
 
 var car;
@@ -47,8 +47,16 @@ init();
 animate();
 
 function buildVehicle() {
-  var car = new THREE.Object3D();
-  var mat = new THREE.MeshNormalMaterial();
+  var car = new THREE.Object3D(); 
+
+	var mat = new THREE.MeshPhongMaterial({
+	color: 0x49ef4,    
+	reflectivity:1,
+	specular:0x222222,
+	refractionRatio:0.98,
+	shininess: 90
+});
+  //var mat = new THREE.MeshNormalMaterial();
   var body = new THREE.Mesh(new THREE.CylinderGeometry(5, 5, 2, 20), mat);
   car.add(body);
   var pointer = new THREE.Mesh(new THREE.BoxGeometry(10, 2, 2), mat);
@@ -75,7 +83,10 @@ function init() {
   renderer.setClearColor(0x888888);
 
 renderer.autoClear = false;
-
+	let spotLight = new THREE.SpotLight(0xffffff)
+	spotLight.position.set( 250 , 400, 250 );
+	spotLight.castShadow = true;
+	scene.add( spotLight );
   var controls = new THREE.OrbitControls(camera, renderer.domElement);
   
   // disable OrbitControl keys
@@ -90,11 +101,9 @@ renderer.autoClear = false;
   scene.add(car)
 
 }
-
 function update(dt) {
 
   keyboard.update();
-  
   if (vel.length() > 0) {
     angle = 1.5*Math.PI + Math.atan2(vel.x, vel.z); 
   }
