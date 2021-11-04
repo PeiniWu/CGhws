@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Car</title>
+</head>
+
+<div id="info">*用"↑ ↓ ← →"控制車子方向*</div>
+<script src="https://threejs.org/build/three.min.js"></script>
+</script>
+<script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
+<script src="https://jyunming-chen.github.io/tutsplus/js/KeyboardState.js"></script>
+
+<style>
+#info {
+  position: absolute;
+  top: 0px;
+  width: 100%;
+  padding: 10px;
+  text-align: center;
+  color: #ffff00
+}
+
+body {
+  overflow: hidden;
+}
+</style>
+
+<body>
+<script>
+var camera, camera3rd, scene, renderer;
+var keyboard = new KeyboardState(),control,circle;
+var clock;
+var car;
+var pos = new THREE.Vector3();
+var vel = new THREE.Vector3();
+var force = new THREE.Vector3();
+var power, angle;
+
+(function() {
+  Math.clamp = function(val,min,max){
+    return Math.min(Math.max(val,min),max);
+    
+  }})();
+  
+init();
+animate();
+//車前方
+function getCarFrontTexture() {
+  var canvas = document.createElement("canvas");
+  canvas.width = 64;
+  canvas.height = 32;
+  var context = canvas.getContext("2d");
+
+  context.fillStyle = "#ffffff";
+  context.fillRect(0, 0, 64, 32);
+
+  context.fillStyle = "#666666";
+  context.fillRect(8, 8, 48, 24);
+
+  return new THREE.CanvasTexture(canvas);
+}
+
+
+
+//車子的兩側
+function getCarSideTexture() {
+  const canvas = document.createElement("canvas");
+  canvas.width = 128;
+  canvas.height = 32;
+  const context = canvas.getContext("2d");
+
+  context.fillStyle = "#ffffff";
+  context.fillRect(0, 0, 128, 32);
+
+  context.fillStyle = "#666666";
+  context.fillRect(10, 8, 38, 24);
+  context.fillRect(58, 8, 60, 24);
+
+  return new THREE.CanvasTexture(canvas);
+}
+function createWheels() {
+  var geometry = new THREE.BoxBufferGeometry(3, 3, 12);
+  var material = new THREE.MeshLambertMaterial({ color: 0x333333 });
+  var wheel = new THREE.Mesh(geometry, material);
+  return wheel;
+}
+function buildCar() {
+  car = new THREE.Group();
+  
+  var backWheel = createWheels();
+  backWheel.position.y = 0;
+  backWheel.position.x = -4;
+  car.add(backWheel);
+  
+  var frontWheel = createWheels();
+  frontWheel.position.y = 0;  
+  frontWheel.position.x = 4;
+  car.add(frontWheel);
+
+  var mainBody = new THREE.Mesh(
+    new THREE.BoxBufferGeometry(15, 4, 10),
+    new THREE.MeshLambertMaterial({ color: 0x49ef4 }),
+	new THREE.MeshPhongMaterial({shininess: 80})
+  );
+  mainBody.position.y = 2;
+  car.add(mainBody);
+  var carFrontTexture = getCarFrontTexture();
+
+ var carBackTexture = getCarFrontTexture();
+
+  var carRightSideTexture = getCarSideTexture();
+
+  var carLeftSideTexture = getCarSideTexture();
+  carLeftSideTexture.center = new THREE.Vector2(0.5, 0.5);
+  carLeftSideTexture.rotation = Math.PI;
+  carLeftSideTexture.flipY = false;
+  const cabin = new THREE.Mesh(new THREE.BoxBufferGeometry(8, 4, 8), [
+    new THREE.MeshLambertMaterial({ map: carFrontTexture }),
+    new THREE.MeshLambertMaterial({ map: carBackTexture }),
+    new THREE.MeshLambertMaterial({ color: 0xffffff }), // top
+    new THREE.MeshLambertMaterial({ color: 0xffffff }), // bottom
+    new THREE.MeshLambertMaterial({ map: carRightSideTexture }),
+    new THREE.MeshLambertMaterial({ map: carLeftSideTexture }),
+	new THREE.MeshPhongMaterial({shininess: 75})
+  ]);
+  cabin.position.x = -1;
+  cabin.position.y = 5;
+  car.add(cabin);
+
+  return car;
+}
+
+var ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+scene.add(ambientLight);
+
+var dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+dirLight.position.set(200, 500, 300);
+scene.add(dirLight);
+function init() {
+  renderer = new THREE.WebGLRenderer();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setClearColor(0x888888);
+   document.body.appendChild(renderer.domElement);
+  clock = new THREE.Clock();
+  scene = new THREE.Scene();
+
+  camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 1000);
+  camera.position.set (0, 200, 250);
+
+	camera3rd = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 1000);
+
+  var gridXZ = new THREE.GridHelper(200, 20, 'red', 'white');
+  scene.add(gridXZ);
+circle = new THREE.Mesh (new THREE.CircleGeometry (10,20), new THREE.MeshBasicMaterial());
+  scene.add (circle);
+  circle.rotation.x = -Math.PI/2; 
+  circle.position.set (20,0,10);
+
+
+renderer.autoClear = false;
+  var controls = new THREE.OrbitControls(camera, renderer.domElement);
+  
+  // disable OrbitControl keys
+  controls.enableKeys = false;
+  
+  ////////////////////////////////////////////////////////////////////////
+  power = 5.0;
+  angle = 0.0;
+  	car = buildCar();
+  scene.add(car);
+
+}
+function update(dt) {
+
+  keyboard.update();
+  if (vel.length() > 0) {
+    angle = 1.5*Math.PI + Math.atan2(vel.x, vel.z); 
+  }
+
+  if (keyboard.pressed("spsace"))  
+ 	  power = 0.1;               
+  if (keyboard.pressed("up"))  
+ 	  power *= 1.2;        
+  if (keyboard.pressed("down"))  
+ 	  power /= 1.2;   
+ 	
+  power = Math.clamp (power, 0, 80.0); 
+  
+  
+  var angle_thrust = angle;
+  if (keyboard.pressed("left"))
+    angle_thrust += 0.3;
+  if (keyboard.pressed("right"))
+    angle_thrust -= 0.3;
+    
+  // compute force
+  var thrust = new THREE.Vector3(1,0,0).multiplyScalar(power).applyAxisAngle (new THREE.Vector3(0,1,0), angle_thrust);
+  force.copy (thrust);
+  force.add(vel.clone().multiplyScalar(-2))
+
+  // eulers
+  vel.add(force.clone().multiplyScalar(dt));
+  pos.add(vel.clone().multiplyScalar(dt));
+}
+
+
+ 
+function animate() {
+
+  var dt = clock.getDelta();
+  update(dt);
+
+  //car update
+  car.position.copy(pos);
+  car.rotation.y = angle;
+
+
+  requestAnimationFrame(animate);
+  render();
+
+  //////////////////////////////////
+  // 3rd person camera
+  // set camera position
+  var localCamera = new THREE.Vector3(-50,30,0);
+  car.localToWorld (localCamera);
+  camera3rd.position.copy (localCamera);
+  
+  camera3rd.lookAt (pos);
+
+
+}
+
+
+
+//renderer.setScissorTest(true);
+function render() {
+  var WW = window.innerWidth;
+  var HH = window.innerHeight;
+
+  renderer.clear();
+
+  renderer.setViewport(0, 0, WW /2, HH);
+  camera.aspect = WW / 2 / HH;
+  camera.updateProjectionMatrix();
+  renderer.render(scene, camera);
+  
+  renderer.setViewport(WW / 2, 0, WW / 2, HH);
+  renderer.render(scene, camera3rd);
+}
+
+function Check_Intersect(car, C, Rad) {
+	const Rad2 = Rad * Rad;
+  
+  let xHat = car.px;
+  let zHat = xHat.clone().cross (new THREE.Vector3(0,1,0)).normalize();
+  let R = {max:{x:0, z:0}, min:{x:0, z:0}};
+  let cp = car.max.clone().sub (C.position);   
+  R.max.x = cp.dot (xHat), R.max.z = cp.dot (zHat);
+  
+	cp = car.min.clone().sub (C.position);
+  R.min.x = cp.dot (xHat), R.min.z = cp.dot (zHat);
+  
+	if (R.max.x < 0) 			/* R to left of circle center */
+   	if (R.max.z < 0) 		/* R in lower left corner */
+     		return ((R.max.x * R.max.x + R.max.z * R.max.z) < Rad2);
+   	else if (R.min.z > 0) 	/* R in upper left corner */
+     		return ((R.max.x * R.max.x + R.min.z * R.min.z) < Rad2);
+   	else 					/* R due West of circle */
+     		return(Math.abs(R.max.x) < Rad);
+ 	else if (R.min.x > 0)  	/* R to right of circle center */
+   		if (R.max.z < 0) 	/* R in lower right corner */
+     			return ((R.min.x * R.min.x + R.max.z * R.max.z) < Rad2);
+   	else if (R.min.z > 0)  	/* R in upper right corner */
+     		return ((R.min.x * R.min.x + R.min.z * R.min.z) < Rad2);
+   	else 				/* R due East of circle */
+     		return (R.min.x < Rad);
+ 	else				/* R on circle vertical centerline */
+   		if (R.max.z < 0) 	/* R due South of circle */
+     		return (Math.abs(R.max.z) < Rad);
+   	else if (R.min.z > 0)  	/* R due North of circle */
+     		return (R.min.z < Rad);
+   	else 				/* R contains circle centerpoint */
+     		return(true);
+} 
+</script>
+
+</body>
+</html>
