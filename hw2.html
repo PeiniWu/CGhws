@@ -156,7 +156,6 @@ function buildCar() {
 			cylinder[i] = new THREE.Mesh(new THREE.CylinderGeometry(cylinderRadius[i], cylinderRadius[i], cylinderHeight[i], 32), cylinder_material.clone());
 	
 		}
-
 		cylinder[0].position.set(30, 10, 90);
 		cylinder[1].position.set(-80, 15, 60);
 		cylinder[2].position.set(100, 20, 80);
@@ -203,12 +202,26 @@ renderer.autoClear = false;
   controls.enableKeys = false;
   
   ////////////////////////////////////////////////////////////////////////
-  power = 5.0;
-  angle = 0.0;
-  	car = buildCar();
+
+  car = buildCar();
   scene.add(car);
   buildCylinder();
-
+	power = 5.0;
+  angle = 0.0;
+  	var rect = {};
+		var car_Pos = car.worldToLocal(car.position.clone());
+		rect.max = car_Pos.clone().add (new THREE.Vector3(15.5/2, 0, 10.5/2)); 
+		rect.min = car_Pos.clone().sub (new THREE.Vector3(15.5/2, 0, 10.5/2));
+		for(var i in cylinder){
+			var cir_Collision = {};
+			cir_Collision.c = car.worldToLocal(cylinder[i].position.clone());
+			cir_Collision.r = cylinderRadius[i];
+			if(checkIntersect(rect, cir_Collision)){
+				cylinder[i].material.color = new THREE.Color(0xff4c4c);
+				 power = 0;   
+			}
+			else cylinder[i].material.color = new THREE.Color('DarkOrange');
+		}
 }
 function update(dt) {
 
@@ -288,23 +301,21 @@ function animate() {
   camera3rd.position.copy (localCamera);
   
   camera3rd.lookAt (pos);
-//碰撞判定
+//碰撞
 		var rect = {};
 		var car_Pos = car.worldToLocal(car.position.clone());
-		rect.max = car_Pos.clone().add (new THREE.Vector3(20.5/2, 0, 10.5/2)); 
-		rect.min = car_Pos.clone().sub (new THREE.Vector3(20.5/2, 0, 10.5/2));
+		rect.max = car_Pos.clone().add (new THREE.Vector3(15.5/2, 0, 10.5/2)); 
+		rect.min = car_Pos.clone().sub (new THREE.Vector3(15.5/2, 0, 10.5/2));
 		for(var i in cylinder){
 			var cir_Collision = {};
 			cir_Collision.c = car.worldToLocal(cylinder[i].position.clone());
 			cir_Collision.r = cylinderRadius[i];
 			if(checkIntersect(rect, cir_Collision)){
 				cylinder[i].material.color = new THREE.Color(0xff4c4c);
-				power = 0;
+				 power = 0;   
 			}
 			else cylinder[i].material.color = new THREE.Color('DarkOrange');
 		}
-
-
 }
 
 
