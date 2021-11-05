@@ -28,9 +28,10 @@ body {
 <body>
 <script>
 var camera, camera3rd, scene, renderer;
-var keyboard = new KeyboardState(),control,circle;
+var keyboard = new KeyboardState(),control,C;
 var clock;
 var car;
+var cylinder = [], cylinderRadius = [],cylinderHeight = [];
 var pos = new THREE.Vector3();
 var vel = new THREE.Vector3();
 var force = new THREE.Vector3();
@@ -99,8 +100,7 @@ function buildCar() {
 
   var mainBody = new THREE.Mesh(
     new THREE.BoxBufferGeometry(15, 4, 10),
-    new THREE.MeshLambertMaterial({ color: 0x49ef4 }),
-	new THREE.MeshPhongMaterial({shininess: 80})
+	new THREE.MeshPhongMaterial({color:	'MediumTurquoise',shininess: 90})
   );
   mainBody.position.y = 2;
   car.add(mainBody);
@@ -115,13 +115,13 @@ function buildCar() {
   carLeftSideTexture.rotation = Math.PI;
   carLeftSideTexture.flipY = false;
   const cabin = new THREE.Mesh(new THREE.BoxBufferGeometry(8, 4, 8), [
-    new THREE.MeshLambertMaterial({ map: carFrontTexture }),
-    new THREE.MeshLambertMaterial({ map: carBackTexture }),
-    new THREE.MeshLambertMaterial({ color: 0xffffff }), // top
-    new THREE.MeshLambertMaterial({ color: 0xffffff }), // bottom
-    new THREE.MeshLambertMaterial({ map: carRightSideTexture }),
-    new THREE.MeshLambertMaterial({ map: carLeftSideTexture }),
-	new THREE.MeshPhongMaterial({shininess: 75})
+    new THREE.MeshPhongMaterial({ map: carFrontTexture }),
+    new THREE.MeshPhongMaterial({ map: carBackTexture }),
+    new THREE.MeshPhongMaterial({ color: 0xffffff }), // top
+    new THREE.MeshPhongMaterial({ color: 0xffffff }), // bottom
+    new THREE.MeshPhongMaterial({ map: carRightSideTexture }),
+    new THREE.MeshPhongMaterial({ map: carLeftSideTexture }),
+	new THREE.MeshPhongMaterial({shininess: 85})
   ]);
   cabin.position.x = -1;
   cabin.position.y = 5;
@@ -129,13 +129,52 @@ function buildCar() {
 
   return car;
 }
+	function buildCylinder(){
+		var cylinder_material = new THREE.MeshPhongMaterial({
+			color: 'DarkOrange',
+			shininess: 85
+		});
+		cylinderRadius[0] = 10;
+		cylinderRadius[1] = 15;
+		cylinderRadius[2] = 20;
+		cylinderRadius[3] = 25;
+		cylinderRadius[4] = 30;
+		cylinderRadius[5] = 25;
+		cylinderRadius[6] = 20;
+		cylinderRadius[7] = 15;
+		cylinderRadius[8] = 10;
+		cylinderHeight[0] = 40;
+		cylinderHeight[1] = 50;
+		cylinderHeight[2] = 60;
+		cylinderHeight[3] = 70;
+		cylinderHeight[4] = 80;
+		cylinderHeight[5] = 70;
+		cylinderHeight[6] = 60;
+		cylinderHeight[7] = 50;
+		cylinderHeight[8] = 40;
+		for(var i = 0;i<9;i++){
+			cylinder[i] = new THREE.Mesh(new THREE.CylinderGeometry(cylinderRadius[i], cylinderRadius[i], cylinderHeight[i], 32), cylinder_material.clone());
+	
+		}
 
-var ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-scene.add(ambientLight);
+		cylinder[0].position.set(30, 10, 90);
+		cylinder[1].position.set(-80, 15, 60);
+		cylinder[2].position.set(100, 20, 80);
+		cylinder[3].position.set(190, 25, 20);
+		cylinder[4].position.set(-160, 30, -90);
+		cylinder[5].position.set(50, 35, -70);
+		cylinder[6].position.set(40, 30, 170);
+		cylinder[7].position.set(160, 25, 160);
+		cylinder[8].position.set(-180, 20, -180);
+		for(var i=0;  i<9; i++){ //var i in cylinder
+			scene.add(cylinder[i]);
+		}
+	}
 
-var dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
-dirLight.position.set(200, 500, 300);
-scene.add(dirLight);
+
+
+
+
 function init() {
   renderer = new THREE.WebGLRenderer();
   renderer.setSize(window.innerWidth, window.innerHeight);
@@ -151,11 +190,11 @@ function init() {
 
   var gridXZ = new THREE.GridHelper(200, 20, 'red', 'white');
   scene.add(gridXZ);
-circle = new THREE.Mesh (new THREE.CircleGeometry (10,20), new THREE.MeshBasicMaterial());
-  scene.add (circle);
-  circle.rotation.x = -Math.PI/2; 
-  circle.position.set (20,0,10);
-
+var ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+scene.add(ambientLight);
+var dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+dirLight.position.set(200, 500, 300);
+scene.add(dirLight);
 
 renderer.autoClear = false;
   var controls = new THREE.OrbitControls(camera, renderer.domElement);
@@ -168,6 +207,7 @@ renderer.autoClear = false;
   angle = 0.0;
   	car = buildCar();
   scene.add(car);
+  buildCylinder();
 
 }
 function update(dt) {
@@ -202,8 +242,30 @@ function update(dt) {
   vel.add(force.clone().multiplyScalar(dt));
   pos.add(vel.clone().multiplyScalar(dt));
 }
+//車子碰撞判定	
+function checkIntersect(rect, C) {
+		var rad = C.r * C.r;
+		var max = rect.max.clone().sub(C.c);
+		var min = rect.min.clone().sub(C.c);
 
+		if (max.x < 0) {
+			if (max.z < 0) return (max.x*max.x + max.z*max.z < rad);
+			else if (min.z > 0) return (max.x*max.x + min.z*min.z < rad);
+			else return (Math.abs(max.x) < C.r);
+		}
 
+		else if (min.x > 0) {
+			if (max.z < 0) return (min.x*min.x + max.z*max.z < rad);
+			else if (min.z > 0) return (min.x*min.x + min.z*min.z < rad);
+			else return (min.x < C.r);
+		}
+
+		else {
+			if (max.z < 0) return (Math.abs(max.z) < C.r);
+			else if (min.z > 0) return (min.z < C.r);
+			else return true;
+		}
+	}
  
 function animate() {
 
@@ -226,6 +288,21 @@ function animate() {
   camera3rd.position.copy (localCamera);
   
   camera3rd.lookAt (pos);
+//碰撞判定
+		var rect = {};
+		var car_Pos = car.worldToLocal(car.position.clone());
+		rect.max = car_Pos.clone().add (new THREE.Vector3(20.5/2, 0, 10.5/2)); 
+		rect.min = car_Pos.clone().sub (new THREE.Vector3(20.5/2, 0, 10.5/2));
+		for(var i in cylinder){
+			var cir_Collision = {};
+			cir_Collision.c = car.worldToLocal(cylinder[i].position.clone());
+			cir_Collision.r = cylinderRadius[i];
+			if(checkIntersect(rect, cir_Collision)){
+				cylinder[i].material.color = new THREE.Color(0xff4c4c);
+				power = 0;
+			}
+			else cylinder[i].material.color = new THREE.Color('DarkOrange');
+		}
 
 
 }
@@ -248,40 +325,6 @@ function render() {
   renderer.render(scene, camera3rd);
 }
 
-function Check_Intersect(car, C, Rad) {
-	const Rad2 = Rad * Rad;
-  
-  let xHat = car.px;
-  let zHat = xHat.clone().cross (new THREE.Vector3(0,1,0)).normalize();
-  let R = {max:{x:0, z:0}, min:{x:0, z:0}};
-  let cp = car.max.clone().sub (C.position);   
-  R.max.x = cp.dot (xHat), R.max.z = cp.dot (zHat);
-  
-	cp = car.min.clone().sub (C.position);
-  R.min.x = cp.dot (xHat), R.min.z = cp.dot (zHat);
-  
-	if (R.max.x < 0) 			/* R to left of circle center */
-   	if (R.max.z < 0) 		/* R in lower left corner */
-     		return ((R.max.x * R.max.x + R.max.z * R.max.z) < Rad2);
-   	else if (R.min.z > 0) 	/* R in upper left corner */
-     		return ((R.max.x * R.max.x + R.min.z * R.min.z) < Rad2);
-   	else 					/* R due West of circle */
-     		return(Math.abs(R.max.x) < Rad);
- 	else if (R.min.x > 0)  	/* R to right of circle center */
-   		if (R.max.z < 0) 	/* R in lower right corner */
-     			return ((R.min.x * R.min.x + R.max.z * R.max.z) < Rad2);
-   	else if (R.min.z > 0)  	/* R in upper right corner */
-     		return ((R.min.x * R.min.x + R.min.z * R.min.z) < Rad2);
-   	else 				/* R due East of circle */
-     		return (R.min.x < Rad);
- 	else				/* R on circle vertical centerline */
-   		if (R.max.z < 0) 	/* R due South of circle */
-     		return (Math.abs(R.max.z) < Rad);
-   	else if (R.min.z > 0)  	/* R due North of circle */
-     		return (R.min.z < Rad);
-   	else 				/* R contains circle centerpoint */
-     		return(true);
-} 
 </script>
 
 </body>
