@@ -6,7 +6,6 @@
 <script src="https://threejs.org/build/three.min.js"></script>
 <script src="https://threejs.org/examples/js/controls/OrbitControls.js">
 </script>
-<script src="http://jyunming-chen.github.io/tutsplus/js/KeyboardState.js"></script>
 <script src="https://raw.githack.com/mrdoob/three.js/dev/examples/js/geometries/TeapotGeometry.js"></script>
 
     <script id="myVertexShader" type="x-shader/x-vertex">
@@ -76,8 +75,6 @@
 
             var scene, renderer, camera;
             var mesh = [];
-            var keyboard = new KeyboardState();
-            var turn = true;
             var angle = 0;
 
             init();
@@ -113,10 +110,7 @@
             }
             
             function animate() {
-                keyboard.update();
-                
-                if (keyboard.down("Z")) turn = !turn;    
-                if (turn) angle += 0.5;
+				angle += 0.5;
                 teapotsRot(mesh,pointLight);
                
                 requestAnimationFrame(animate);
